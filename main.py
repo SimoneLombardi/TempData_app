@@ -34,8 +34,8 @@ def main():
     current_file_dataframe_ext = pd.DataFrame()
     data_frame_ext = pd.DataFrame({
         'timestamp_day': [],
-        'Temperature': [],
-        'Humidity': []
+        'Temp min': [],
+        'Temp max': []
     })
     
     try:
@@ -44,7 +44,7 @@ def main():
         pass
         
     
-    for filename in os.listdir(dati_dir+dati_esterni_dir):
+    for filename in os.listdir(dati_dir + dati_esterni_dir):
         #print(filename)
         if utils.check_file_name(filename):                                           
             filepath = os.path.join(dati_dir + dati_esterni_dir, filename)
@@ -80,8 +80,8 @@ def main():
                     
             current_file_dataframe_ext = pd.DataFrame({
                 'timestamp_day': timestamp_day,
-                'Temperature': col_1_lst,
-                'Humidity': col_2_lst
+                'Temp min': col_1_lst,
+                'Temp max': col_2_lst
             })
                 
             data_frame_ext = pd.concat([data_frame_ext, current_file_dataframe_ext], ignore_index=True)
@@ -92,14 +92,13 @@ def main():
     # save the dataFrame to a csv file
     data_frame_ext.sort_values(by='timestamp_day', inplace=True, kind='stable')
     data_frame_ext.drop_duplicates(subset=['timestamp_day'], inplace=True, keep='first')
-    data_frame_ext.dropna(subset=['Temperature', 'Humidity'], inplace=True, axis=0)
+    data_frame_ext.dropna(subset=['Temp min', 'Temp max'], inplace=True, axis=0)
     data_frame_ext.reset_index(drop=True, inplace=True)
     
     print(f"complete ext data frame shape BEFORE SAVE: {data_frame_ext.shape}")
     data_frame_ext.to_pickle('resources/saved_data/dati_esterni.pkl')
-            
     
-    for filename in os.listdir(dati_dir+dati_sensori_dir):
+    for filename in os.listdir(dati_dir + dati_sensori_dir):
         #print(filename)
         if utils.check_file_name(filename):                                           # da modificare con funzione per vedere se nome corretto
             filepath = os.path.join(dati_dir + dati_sensori_dir, filename)
@@ -147,6 +146,57 @@ def main():
                         'Humidity': col_1_lst
                     })
 
+            unique_dates = current_file_dataframe['timestamp_day'].unique()
+            print(f"Unique dates: {len(unique_dates)}")
+            
+            for date in unique_dates:
+                maxmin_temp = 1
+                plot_data_frame = current_file_dataframe[current_file_dataframe['timestamp_day'] == date]
+                ext_temp_data = data_frame_ext[data_frame_ext['timestamp_day'] == date]
+                if ext_temp_data.empty:
+                    #print(f"No external data for date: {date.strftime('%Y-%m-%d')}")
+                    maxmin_temp = 0
+                
+                #print(f"plot dataframe:\n {plot_data_frame.head()}")
+                #print(f"ext temp data:\n {ext_temp_data.head()}")
+                
+                fig, ax = plt.subplots(figsize=(10, 5))
+                ax.plot(plot_data_frame['timestamp_hour'], plot_data_frame['Temperature'], marker='o', linestyle='dashed', color='k')
+                ax.grid(True, linestyle='solid', alpha=0.3)
+                
+                x_start, x_end = ax.get_xlim()
+                    
+                if maxmin_temp != 0:
+                    mintemp = ax.hlines(ext_temp_data['Temp min'],xmin=x_start,xmax=x_end, color='b', linestyle='dashdot', linewidth=0.5)
+                    maxtemp = ax.hlines(ext_temp_data['Temp max'],xmin=x_start,xmax=x_end, color='r', linestyle='dashdot', linewidth=0.5)
+                    ax.legend([mintemp, maxtemp],[f"Temp min: {ext_temp_data['Temp min'].item()}", f"Temp max: {ext_temp_data['Temp max'].item()}"],loc='best', fontsize=7)
+                
+                y_start, y_end = ax.get_ylim()
+                
+                for x, y in zip(plot_data_frame['timestamp_hour'], plot_data_frame['Temperature']):
+                    yinter = y_end-y_start
+                    #print(y_start, y_end, yinter)
+                    ypos = y + (yinter*0.02) if y + (yinter*0.02) < y_end else y - (yinter*0.035)
+                    ax.text(x, ypos, f'{y:.1f}', fontsize=7, ha='center', color='black')
+                
+                ax.set_xticks(plot_data_frame['timestamp_hour'])
+                ax.set_xticklabels(plot_data_frame['timestamp_hour'], rotation=45)
+                
+                day_name = date.day_name()
+                sensor_name = filename.split('.')[0]
+                day_name_ita = day_ita_dict.get(day_name)
+                file_name = f"{date.strftime('%d-%m-%Y')}"+ f" {day_name_ita}"
+                ttlString = f"{date.strftime('%d-%m-%Y')}"+ f" {day_name_ita}" + f", sensore:{sensor_name}"
+                ax.set_title(ttlString)
+                ax.set_xlabel('Time of Day')
+                ax.set_ylabel('Temperature (°C)')
+                
+                if not os.path.exists("output/plots/" + sensor_name):
+                    os.makedirs("output/plots/" + sensor_name)
+                
+                path = "output/plots/" + sensor_name + "/" + file_name + ".png"
+                fig.savefig(path, dpi=300, bbox_inches='tight')
+                plt.close(fig)  # Close the figure to free memory      
                 
             ##print(current_file_dataframe['timestamp_hour'].head())
             ##print(current_file_dataframe.shape)
