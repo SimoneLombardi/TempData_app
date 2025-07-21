@@ -3,6 +3,7 @@ import datetime as dt
 import time as tm 
 import pytz
 import pandas as pd
+import pickle
 import matplotlib.pyplot as plt
 import os
 import numpy as np
@@ -23,7 +24,7 @@ monts_dict = dict(months)
 day_ita_dict = dict(day_ita)
 
 def main():
-    #print("\n\n\n Starting the temperature data plotting script.")
+    print("\n\n\n Starting the temperature data plotting script.")
     # step 1: load data from cvs files folder
     dati_dir = 'dati/'
     dati_sensori_dir = 'dati_sensori/'
@@ -31,6 +32,17 @@ def main():
     
     current_file_dataframe = pd.DataFrame()
     current_file_dataframe_ext = pd.DataFrame()
+    data_frame_ext = pd.DataFrame({
+        'timestamp_day': [],
+        'Temperature': [],
+        'Humidity': []
+    })
+    
+    try:
+        data_frame_ext = pd.read_pickle('resources/saved_data/dati_esterni.pkl')
+    except FileNotFoundError:
+        pass
+        
     
     for filename in os.listdir(dati_dir+dati_esterni_dir):
         #print(filename)
@@ -56,17 +68,35 @@ def main():
                     data_string = ' '.join(data_parts)          
                     
                     timestamp_day.append(dt.datetime.strptime(data_string, '%d %m %Y'))
-                    col_1_lst.append(float(row[2]))
-                    col_2_lst.append(float(row[3]))
+                    try:
+                        temp1 = float(row[2])
+                        temp2 = float(row[3])
+                    except ValueError:
+                        temp1 = np.nan
+                        temp2 = np.nan
+                        
+                    col_1_lst.append(temp1)
+                    col_2_lst.append(temp2)
                     
-                current_file_dataframe_ext = pd.DataFrame({
-                    'timestamp_day': timestamp_day,
-                    'Temperature': col_1_lst,
-                    'Humidity': col_2_lst
-                })
+            current_file_dataframe_ext = pd.DataFrame({
+                'timestamp_day': timestamp_day,
+                'Temperature': col_1_lst,
+                'Humidity': col_2_lst
+            })
                 
-            # save the dataFrame to a csv file
+            data_frame_ext = pd.concat([data_frame_ext, current_file_dataframe_ext], ignore_index=True)
             
+            print(f"Data from {filename} processed. Total records: {current_file_dataframe_ext.shape}")
+            print(f"complete ext data frame shape: {data_frame_ext.shape}")
+            
+    # save the dataFrame to a csv file
+    data_frame_ext.sort_values(by='timestamp_day', inplace=True, kind='stable')
+    data_frame_ext.drop_duplicates(subset=['timestamp_day'], inplace=True, keep='first')
+    data_frame_ext.dropna(subset=['Temperature', 'Humidity'], inplace=True, axis=0)
+    data_frame_ext.reset_index(drop=True, inplace=True)
+    
+    print(f"complete ext data frame shape BEFORE SAVE: {data_frame_ext.shape}")
+    data_frame_ext.to_pickle('resources/saved_data/dati_esterni.pkl')
             
     
     for filename in os.listdir(dati_dir+dati_sensori_dir):
