@@ -43,13 +43,12 @@ def main():
     except FileNotFoundError:
         pass
         
-    
+    # gestione dei file con dati temperatura esterna
+    # caricamento dei nuovi file e concatenazione del dataFrame complessivo - salvato come file .pkl
     for filename in os.listdir(dati_dir + dati_esterni_dir):
-        #print(filename)
+        
         if utils.check_file_name(filename):                                           
             filepath = os.path.join(dati_dir + dati_esterni_dir, filename)
-            #print(filepath)
-            # save here the data, check for correct temperature colum
             timestamp_day = list()
             col_1_lst = list()
             col_2_lst = list()
@@ -86,17 +85,18 @@ def main():
                 
             data_frame_ext = pd.concat([data_frame_ext, current_file_dataframe_ext], ignore_index=True)
             
-            print(f"Data from {filename} processed. Total records: {current_file_dataframe_ext.shape}")
-            print(f"complete ext data frame shape: {data_frame_ext.shape}")
+            #print(f"Data from {filename} processed. Total records: {current_file_dataframe_ext.shape}")
+            #print(f"complete ext data frame shape: {data_frame_ext.shape}")
             
-    # save the dataFrame to a csv file
+    # save the dataFrame to a .pkl file, ordinando dataFrame e rimuovendo duplicati
     data_frame_ext.sort_values(by='timestamp_day', inplace=True, kind='stable')
     data_frame_ext.drop_duplicates(subset=['timestamp_day'], inplace=True, keep='first')
     data_frame_ext.dropna(subset=['Temp min', 'Temp max'], inplace=True, axis=0)
     data_frame_ext.reset_index(drop=True, inplace=True)
     
-    print(f"complete ext data frame shape BEFORE SAVE: {data_frame_ext.shape}")
     data_frame_ext.to_pickle('resources/saved_data/dati_esterni.pkl')
+    print(f"Completata gestione dati temperatura esterna AFTER SAVE: {data_frame_ext.shape}")
+
     
     for filename in os.listdir(dati_dir + dati_sensori_dir):
         #print(filename)
@@ -154,11 +154,7 @@ def main():
                 plot_data_frame = current_file_dataframe[current_file_dataframe['timestamp_day'] == date]
                 ext_temp_data = data_frame_ext[data_frame_ext['timestamp_day'] == date]
                 if ext_temp_data.empty:
-                    #print(f"No external data for date: {date.strftime('%Y-%m-%d')}")
                     maxmin_temp = 0
-                
-                #print(f"plot dataframe:\n {plot_data_frame.head()}")
-                #print(f"ext temp data:\n {ext_temp_data.head()}")
                 
                 fig, ax = plt.subplots(figsize=(10, 5))
                 ax.plot(plot_data_frame['timestamp_hour'], plot_data_frame['Temperature'], marker='o', linestyle='dashed', color='k')
