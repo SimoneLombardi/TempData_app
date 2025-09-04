@@ -193,13 +193,8 @@ def main():
                 path = "output/plots/" + sensor_name + "/" + file_name + ".png"
                 fig.savefig(path, dpi=300, bbox_inches='tight')
                 plt.close(fig)  # Close the figure to free memory      
+    
                 
-            ##print(current_file_dataframe['timestamp_hour'].head())
-            ##print(current_file_dataframe.shape)
-            
-                    
-
-
     
 if __name__ == "__main__":
     main()
