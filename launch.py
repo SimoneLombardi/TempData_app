@@ -16,7 +16,7 @@ app_dir = os.getcwd()
 
 def load_file_ext():
     filetypes = (
-        ('text files', '*.txt'),
+        ('text files', '*.csv'),
         ('All files', '*.*')
     )
 
@@ -35,7 +35,7 @@ def load_file_ext():
     
 def load_file_sens():
     filetypes = (
-        ('text files', '*.txt'),
+        ('text files', '*.csv'),
         ('All files', '*.*')
     )
 
@@ -62,10 +62,12 @@ def main():
     
     external_data_btt = tk.Button(root, text="Carica file dati esterni", command=load_file_ext)
     sensor_data_btt = tk.Button(root, text="Carica file dati sensori", command=load_file_sens)
+    launch_program_btt = tk.Button(root, text="Lancia programma", command=lambda: showinfo("Launch", "Program launch not implemented yet."))
     settings_btt = tk.Button(root, text="Impostazioni", command=lambda: showinfo("Settings", "Settings dialog not implemented yet."))
     
     external_data_btt.pack(padx=5, pady=5, expand=True, fill=tk.BOTH)
     sensor_data_btt.pack(padx=5, pady=5, expand=True, fill=tk.BOTH)
+    launch_program_btt.pack(padx=5, pady=5, expand=True, fill=tk.BOTH)
     settings_btt.pack(padx=5, pady=5, expand=True, fill=tk.BOTH)
         
     root.mainloop()

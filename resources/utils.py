@@ -78,4 +78,4 @@ def file_name_sensor_data(sens_dir, app_dir, filenames):
             )
             
         
-        os.rename(filename, (sens_dir+'/'+new_filename+'.csv'))
+       
